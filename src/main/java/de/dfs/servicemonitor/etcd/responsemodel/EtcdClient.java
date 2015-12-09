@@ -42,7 +42,6 @@ public class EtcdClient
   private Promise< Response > get(String key, boolean recursive, boolean wait)
   {
     String getUrl = baseUrl + "keys/" + key;
-    System.err.println(getUrl);
     WSRequest wsRequest = wsClient.url(getUrl);
     if (recursive)
     {

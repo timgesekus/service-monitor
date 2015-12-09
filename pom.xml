@@ -2,7 +2,7 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.dfs</groupId>
-	<artifactId>service-monitor</artifactId>
+	<artifactId>newsim-web-service-monitor</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>Service Monitor</name>
 	<description>Monitor services published in etcd and report thier status via etcd</description>
@@ -57,6 +57,10 @@
 			<version>2.4.4</version>
 			<scope>test</scope>
 		</dependency>
-
+		<dependency>
+			<groupId>com.typesafe.akka</groupId>
+			<artifactId>akka-testkit_2.11</artifactId>
+			<version>2.4.1</version>
+		</dependency>
 	</dependencies>
 </project>
