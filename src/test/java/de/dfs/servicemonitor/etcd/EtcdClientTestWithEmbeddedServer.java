@@ -1,4 +1,4 @@
-package de.dfs.servicemonitor.etcd.responsemodel;
+package de.dfs.servicemonitor.etcd;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -10,6 +10,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import de.dfs.servicemonitor.etcd.EtcdClient;
+import de.dfs.servicemonitor.etcd.responsemodel.Converter;
+import de.dfs.servicemonitor.etcd.responsemodel.Node;
+import de.dfs.servicemonitor.etcd.responsemodel.Response;
 import play.api.routing.Router;
 import play.libs.F.Promise;
 import play.libs.ws.WS;
@@ -55,7 +59,7 @@ public class EtcdClientTestWithEmbeddedServer
   @Test
   public void testSimpleGetWithEmbeddedServer()
   {
-    Promise< Response > promise = etcdClient.get("test");
+    Promise< Response > promise = etcdClient.create().get("test");
     Response response = promise.get(1000);
     assertThat(getResponse.action, equalTo(response.action));
     assertThat(getResponse.node.createdIndex, equalTo(response.node.createdIndex));
