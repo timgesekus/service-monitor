@@ -1,100 +1,105 @@
 package de.dfs.servicemonitor.monitor;
 
+import java.time.Duration;
+
 import de.dfs.servicemonitor.etcd.EtcdClient;
 import de.dfs.servicemonitor.etcd.EtcdClient.Connection;
 import de.dfs.servicemonitor.etcd.responsemodel.Response;
+import de.dfs.servicemonitor.monitor.ServicePinger.PingResult;
 import play.libs.F.Promise;
 import play.libs.ws.WSClient;
 import play.libs.ws.WSRequest;
 
 public class ServiceMonitor {
-	private final int millisBetweenConnectionRetries ;
-	private final int timeoutForConnection;
-	private final int maxNumberOfConnectionRetries ;
-	private final int waitForSocketPublishing;
-	private EtcdClient etcdClient;
-	private WSClient wsClient;
-	private String url;
-	private String session;
-	
-	public ServiceMonitor(EtcdClient etcdClient, WSClient wsClient, String url, String sessionId, ServiceMonitorConfig config) {
-		this.etcdClient = etcdClient;
-		this.wsClient = wsClient;
-		this.url = url;
-		session = sessionId;
-		millisBetweenConnectionRetries = config.getMillisBetweenConnectionRetries();
-		timeoutForConnection = config.getTimeoutForConnection();
-		maxNumberOfConnectionRetries = config.getMaxNumberOfConnectionRetries();
-		waitForSocketPublishing = config.getWaitForSocketPublishing();
-	}
+  private final Duration millisBetweenConnectionRetries;
+  private final Duration timeoutForConnection;
+  private final int maxNumberOfConnectionRetries;
+  private final Duration waitForSocketPublishing;
+  private EtcdClient etcdClient;
+  private String session;
+  private ServicePinger servicePinger;
+  private String etcdSocketKey;
 
-	public void start(String socketKey, long waitForSocket) {
-		waitForSocketPublishing();
-		tryInitialConnect();
-		monitorService();
-	}
+  public ServiceMonitor(EtcdClient etcdClient, ServicePinger servicePinger, String sessionId,
+      ServiceMonitorConfig config) {
+    this.etcdClient = etcdClient;
+    this.servicePinger = servicePinger;
+    session = sessionId;
+    millisBetweenConnectionRetries = config.getDurationBetweenConnectionRetries();
+    timeoutForConnection = config.getTimeoutForConnection();
+    maxNumberOfConnectionRetries = config.getMaxNumberOfConnectionRetries();
+    waitForSocketPublishing = config.getWaitForSocketPublishing();
+    etcdSocketKey = config.getSocketKey();
+  }
 
-	private void waitForSocketPublishing() {
-		Connection request = etcdClient.createConnection();
-		request.setWait();
-		Promise<Response> promise = request.get(session + "/" + "socket");
-		try {
-			promise.get(waitForSocketPublishing);
-		} catch (Throwable t) {
-			publishDeadState();
-			exit("Wait for socket failed");
-		}
-	}
+  public void start(String socketKey, long waitForSocket) {
+    waitForSocketPublishing();
+    tryInitialConnect();
+    monitorService();
+  }
 
-	private void tryInitialConnect() {
-		boolean isConnected = false;
-		int numberOfRetries = 0;
-		do {
-			try {
-				WSRequest request = wsClient.url(url).setRequestTimeout(timeoutForConnection);
-				request.get();
-				isConnected = true;
-				publishAliveState();
-			} catch (Throwable t) {
-				numberOfRetries++;
-			}
-		} while (!isConnected || numberOfRetries < maxNumberOfConnectionRetries);
-		if (!isConnected) {
-			publishDeadState();
-			exit("Initial connect failed");
-		}
-	}
+  private void waitForSocketPublishing() {
+    Connection request = etcdClient.createConnection();
+    request.setWait();
+    Promise<Response> promise = request.get(session + "/" + "socket");
+    try {
+      promise.get(waitForSocketPublishing.toMillis());
+    } catch (Throwable t) {
+      publishDeadState();
+      exit("Wait for socket failed");
+    }
+  }
 
-	public void monitorService() {
-		boolean isConnected = false;
-		do {
-			try {
-				WSRequest request = wsClient.url(url).setRequestTimeout(timeoutForConnection);
-				request.get();
-				isConnected = true;
-				publishAliveState();
-				Thread.sleep(millisBetweenConnectionRetries);
-			} catch (Throwable t) {
-				isConnected = false;
-			}
-		} while (isConnected);
-		publishDeadState();
-		exit("Initial connect failed");
-	}
+  private void tryInitialConnect() {
+    boolean isConnected = false;
+    int numberOfRetries = 0;
+    do {
+      PingResult pingResult = servicePinger.ping(timeoutForConnection);
+      if (!pingResult.isError()) {
+        isConnected = true;
+        publishAliveState();
+      } else {
+        numberOfRetries++;
+      }
+    } while (!isConnected || numberOfRetries < maxNumberOfConnectionRetries);
+    if (!isConnected) {
+      publishDeadState();
+      exit("Initial connect failed");
+    }
+  }
 
+  public void monitorService() {
+    boolean isConnected = true;
+    do {
+      PingResult pingResult = servicePinger.ping(timeoutForConnection);
+      if (!pingResult.isError()) {
+        isConnected = true;
+        publishAliveState();
+        try {
+          Thread.sleep(millisBetweenConnectionRetries.toMillis());
+        } catch (InterruptedException e) {
+          isConnected = false;
+        }
+      } else {
+        isConnected = false;
+      }
+    } while (isConnected);
+    publishDeadState();
+    exit("Initial connect failed");
+  }
 
-	private void exit(String errorMsg) {
-		System.err.println(errorMsg);
-	}
+  private void exit(String errorMsg) {
+    System.err.println(errorMsg);
+  }
 
-	public void publishDeadState() {
-		Connection create = etcdClient.createConnection();
-		create.set(session + "/state", "dead");
-	}
+  public void publishDeadState() {
+    Connection create = etcdClient.createConnection();
+    create.set(session + "/state", "dead");
+  }
 
-	public void publishAliveState() {
-		Connection connection = etcdClient.createConnection();
-		connection.setTTL(1000);
-		connection.set(session + "/state", "alive");
-	}
+  public void publishAliveState() {
+    Connection connection = etcdClient.createConnection();
+    connection.setTTL(1000);
+    connection.set(session + "/state", "alive");
+  }
 }

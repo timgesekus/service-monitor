@@ -1,33 +1,41 @@
 package de.dfs.servicemonitor.monitor;
 
+import java.time.Duration;
+
 import com.typesafe.config.Config;
 
 public class ServiceMonitorConfig {
-	private final int millisBetweenConnectionRetries;
-	private final int waitForConnect;
-	private final int maxNumberOfConnectionRetries;
-	private final int waitForSocketPublishing;
+  private final Duration durationBetweenConnectionRetries;
+  private final Duration waitForConnectTimeout;
+  private final int maxNumberOfConnectionRetries;
+  private final Duration waitForSocketPublishing;
+  private final String etcdSocketKey;
 
-	public ServiceMonitorConfig(Config config) {
-		millisBetweenConnectionRetries = config.getInt("millis-between-connection-retries");
-		waitForConnect = config.getInt("wait-for-connect");
-		maxNumberOfConnectionRetries = config.getInt("max-number-of-connection-retries");
-		waitForSocketPublishing = config.getInt("wait-for-socket-publishing");
-	}
+  public ServiceMonitorConfig(Config config) {
+    durationBetweenConnectionRetries = config.getDuration("millis-between-connection-retries");
+    waitForConnectTimeout = config.getDuration("wait-for-connect");
+    maxNumberOfConnectionRetries = config.getInt("max-number-of-connection-retries");
+    waitForSocketPublishing = config.getDuration("wait-for-socket-publishing");
+    etcdSocketKey = config.getString("etcd-socket-key");
+  }
 
-	public int getMillisBetweenConnectionRetries() {
-		return millisBetweenConnectionRetries;
-	}
+  public Duration getDurationBetweenConnectionRetries() {
+    return durationBetweenConnectionRetries;
+  }
 
-	public int getTimeoutForConnection() {
-		return waitForConnect;
-	}
+  public Duration getTimeoutForConnection() {
+    return waitForConnectTimeout;
+  }
 
-	public int getMaxNumberOfConnectionRetries() {
-		return maxNumberOfConnectionRetries;
-	}
+  public int getMaxNumberOfConnectionRetries() {
+    return maxNumberOfConnectionRetries;
+  }
 
-	public int getWaitForSocketPublishing() {
-		return waitForSocketPublishing;
-	}
+  public Duration getWaitForSocketPublishing() {
+    return waitForSocketPublishing;
+  }
+
+  public String getSocketKey() {
+    return etcdSocketKey;
+  }
 }
