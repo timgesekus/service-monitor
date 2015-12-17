@@ -59,7 +59,7 @@ public class EtcdClientTestWithEmbeddedServer
   @Test
   public void testSimpleGetWithEmbeddedServer()
   {
-    Promise< Response > promise = etcdClient.create().get("test");
+    Promise< Response > promise = etcdClient.createConnection().get("test");
     Response response = promise.get(1000);
     assertThat(getResponse.action, equalTo(response.action));
     assertThat(getResponse.node.createdIndex, equalTo(response.node.createdIndex));

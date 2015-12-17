@@ -24,7 +24,7 @@ import akka.actor.Props;
 import akka.testkit.JavaTestKit;
 import akka.testkit.TestActorRef;
 import de.dfs.servicemonitor.etcd.EtcdClient;
-import de.dfs.servicemonitor.etcd.EtcdClient.Request;
+import de.dfs.servicemonitor.etcd.EtcdClient.Connection;
 import de.dfs.servicemonitor.etcd.responsemodel.Response;
 import de.dfs.servicemonitor.monitor.SocketPublishingMonitor.SocketPublished;
 import de.dfs.servicemonitor.monitor.SocketPublishingMonitor.WaitForSocketFailed;
@@ -49,7 +49,7 @@ public class SocketPublishingMonitorTest
   EtcdClient etcdClient;
 
   @Mock
-  Request request;
+  Connection request;
   
   Response response = new Response();
   
@@ -97,7 +97,7 @@ public class SocketPublishingMonitorTest
   private void setupEtcdClientToReturnResponseWithSocket() {
     Promise< Response > responsePromise = Promise.timeout(response,100);
     response.node.value=SOCKET;
-    when(etcdClient.create()).thenReturn(request);
+    when(etcdClient.createConnection()).thenReturn(request);
     when(request.get(SESSION_1+"/"+"socket")).thenReturn(responsePromise);
   }
 
@@ -128,7 +128,7 @@ public class SocketPublishingMonitorTest
 
   private void setupEtcdClientToThrowTimeoutRequest() {
     Promise< Response > responsePromise = Promise.throwing(new TimeoutException(TIMEOUT));
-    when(etcdClient.create()).thenReturn(request);
+    when(etcdClient.createConnection()).thenReturn(request);
     when(request.get(SESSION_1+"/"+"socket")).thenReturn(responsePromise);
   }
 }

@@ -6,7 +6,7 @@ import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import akka.japi.pf.ReceiveBuilder;
 import de.dfs.servicemonitor.etcd.EtcdClient;
-import de.dfs.servicemonitor.etcd.EtcdClient.Request;
+import de.dfs.servicemonitor.etcd.EtcdClient.Connection;
 import de.dfs.servicemonitor.etcd.responsemodel.Response;
 import play.libs.F.Promise;
 
@@ -52,7 +52,7 @@ public class SocketPublishingMonitor extends AbstractActor {
   }
 
   public void handleMonitor(WaitForSocketPublishing waForSocketPublishing) {
-    Request request = etcdClient.create();
+    Connection request = etcdClient.createConnection();
     request.setWait();
     Promise<Response> promise = request.get(waForSocketPublishing.simulatorKey + "/" + "socket");
     sender = sender();

@@ -8,7 +8,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import de.dfs.servicemonitor.etcd.EtcdClient;
-import de.dfs.servicemonitor.etcd.EtcdClient.Request;
+import de.dfs.servicemonitor.etcd.EtcdClient.Connection;
 import de.dfs.servicemonitor.etcd.responsemodel.Converter;
 import de.dfs.servicemonitor.etcd.responsemodel.Response;
 
@@ -60,7 +60,7 @@ public class EtcdClientTestWithoutEmbeddedServer
 
     EtcdClient etcdClient = new EtcdClient(wsClient, BASE_URL, converter);
 
-    Promise< Response > responsePromise = etcdClient.create().get("test");
+    Promise< Response > responsePromise = etcdClient.createConnection().get("test");
     Response actualResponse = responsePromise.get(1000);
     assertApplicationJasionSetAsContentType();
     assertThatGetWasCalled();
@@ -75,7 +75,7 @@ public class EtcdClientTestWithoutEmbeddedServer
     setupWsClientToReturnMockedResponse();
 
     EtcdClient etcdClient = new EtcdClient(wsClient, BASE_URL, converter);
-    Request request = etcdClient.create();
+    Connection request = etcdClient.createConnection();
     request.setWait();
    
     Promise< Response > responsePromise = request.get("test");
@@ -94,7 +94,7 @@ public class EtcdClientTestWithoutEmbeddedServer
     setupWsClientToReturnMockedResponse();
 
     EtcdClient etcdClient = new EtcdClient(wsClient, BASE_URL, converter);
-    Request request = etcdClient.create();
+    Connection request = etcdClient.createConnection();
     request.setRecursive();
     request.setWait();
     Promise< Response > responsePromise = request.get("test");
